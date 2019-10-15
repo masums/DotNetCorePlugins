@@ -27,7 +27,16 @@ namespace McMaster.NETCore.Plugins
         /// </summary>
         /// <param name="assemblyFile">The file path to the main assembly for the plugin.</param>
         /// <param name="isUnloadable">Enable unloading the plugin from memory.</param>
-        /// <param name="sharedTypes">A list of types which should be shared between the host and the plugin.</param>
+        /// <param name="sharedTypes">
+        /// <para>
+        /// A list of types which should be shared between the host and the plugin.
+        /// </para>
+        /// <para>
+        /// <seealso href="https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md">
+        /// https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md
+        /// </seealso>
+        /// </para>
+        /// </param>
         /// <returns>A loader.</returns>
         public static PluginLoader CreateFromAssemblyFile(string assemblyFile, bool isUnloadable, Type[] sharedTypes)
             => CreateFromAssemblyFile(assemblyFile,isUnloadable, sharedTypes, _ => { });
@@ -37,7 +46,16 @@ namespace McMaster.NETCore.Plugins
         /// </summary>
         /// <param name="assemblyFile">The file path to the main assembly for the plugin.</param>
         /// <param name="isUnloadable">Enable unloading the plugin from memory.</param>
-        /// <param name="sharedTypes">A list of types which should be shared between the host and the plugin.</param>
+        /// <param name="sharedTypes">
+        /// <para>
+        /// A list of types which should be shared between the host and the plugin.
+        /// </para>
+        /// <para>
+        /// <seealso href="https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md">
+        /// https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md
+        /// </seealso>
+        /// </para>
+        /// </param>
         /// <param name="configure">A function which can be used to configure advanced options for the plugin loader.</param>
         /// <returns>A loader.</returns>
         public static PluginLoader CreateFromAssemblyFile(string assemblyFile, bool isUnloadable, Type[] sharedTypes, Action<PluginConfig> configure)
@@ -56,18 +74,55 @@ namespace McMaster.NETCore.Plugins
         /// Create a plugin loader for an assembly file.
         /// </summary>
         /// <param name="assemblyFile">The file path to the main assembly for the plugin.</param>
-        /// <param name="sharedTypes">A list of types which should be shared between the host and the plugin.</param>
+        /// <param name="sharedTypes">
+        /// <para>
+        /// A list of types which should be shared between the host and the plugin.
+        /// </para>
+        /// <para>
+        /// <seealso href="https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md">
+        /// https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md
+        /// </seealso>
+        /// </para>
+        /// </param>
         /// <returns>A loader.</returns>
         public static PluginLoader CreateFromAssemblyFile(string assemblyFile, Type[] sharedTypes)
             => CreateFromAssemblyFile(assemblyFile, sharedTypes, _ => { });
 
         /// <summary>
+        /// <para>
+        /// Obsolete. Use <see cref="CreateFromAssemblyFile(string, Action{PluginConfig})" /> instead.
+        /// See https://github.com/natemcmaster/DotNetCorePlugins/issues/76 for details.
+        /// </para>
+        /// <para>
         /// Create a plugin loader for an assembly file.
+        /// </para>
+        /// </summary>
+        /// <param name="assemblyFile">The file path to the plugin config.</param>
+        /// <param name="loaderOptions">Options for the loader</param>
+        [Obsolete("This API is obsolete and will be removed in a future version. The recommended replacement " +
+                  " is one of the other overloads of this method which does not use PluginLoaderOptions. " +
+                  "See  https://github.com/natemcmaster/DotNetCorePlugins/issues/76 for more details.")]
+        public static PluginLoader CreateFromAssemblyFile(string assemblyFile, PluginLoaderOptions loaderOptions)
+            => CreateFromAssemblyFile(assemblyFile, o =>
+            {
+                o.PreferSharedTypes = loaderOptions.HasFlag(PluginLoaderOptions.PreferSharedTypes);
+            });
+
+        /// <summary>
+        /// <para>
+        /// Obsolete. Use <see cref="CreateFromAssemblyFile(string, Type[], Action{PluginConfig})" /> instead.
+        /// See https://github.com/natemcmaster/DotNetCorePlugins/issues/76 for details.
+        /// </para>
+        /// <para>
+        /// Create a plugin loader for an assembly file.
+        /// </para>
         /// </summary>
         /// <param name="assemblyFile">The file path to the plugin config.</param>
         /// <param name="sharedTypes">A list of types which should be shared between the host and the plugin.</param>
         /// <param name="loaderOptions">Options for the loader</param>
-        [Obsolete("This API is obsolete and will be removed in a future version. The recommended replacement is one of the other overloads of this method which does not use PluginLoaderOptions.")]
+        [Obsolete("This API is obsolete and will be removed in a future version. The recommended replacement " +
+                  "is one of the other overloads of this method which does not use PluginLoaderOptions. " +
+                  "See https://github.com/natemcmaster/DotNetCorePlugins/issues/76 for more details.")]
         public static PluginLoader CreateFromAssemblyFile(string assemblyFile, Type[] sharedTypes, PluginLoaderOptions loaderOptions)
             => CreateFromAssemblyFile(assemblyFile, sharedTypes, o =>
             {
@@ -78,7 +133,16 @@ namespace McMaster.NETCore.Plugins
         /// Create a plugin loader for an assembly file.
         /// </summary>
         /// <param name="assemblyFile">The file path to the main assembly for the plugin.</param>
-        /// <param name="sharedTypes">A list of types which should be shared between the host and the plugin.</param>
+        /// <param name="sharedTypes">
+        /// <para>
+        /// A list of types which should be shared between the host and the plugin.
+        /// </para>
+        /// <para>
+        /// <seealso href="https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md">
+        /// https://github.com/natemcmaster/DotNetCorePlugins/blob/master/docs/what-are-shared-types.md
+        /// </seealso>
+        /// </para>
+        /// </param>
         /// <param name="configure">A function which can be used to configure advanced options for the plugin loader.</param>
         /// <returns>A loader.</returns>
         public static PluginLoader CreateFromAssemblyFile(string assemblyFile, Type[] sharedTypes, Action<PluginConfig> configure)
@@ -124,8 +188,13 @@ namespace McMaster.NETCore.Plugins
         }
 
         private readonly PluginConfig _config;
-        private readonly AssemblyLoadContext _context;
+        private AssemblyLoadContext _context;
+        private readonly AssemblyLoadContextBuilder _contextBuilder;
         private volatile bool _disposed;
+
+#if FEATURE_UNLOAD
+        private FileSystemWatcher? _fileWatcher;
+#endif
 
         /// <summary>
         /// Initialize an instance of <see cref="PluginLoader" />
@@ -134,7 +203,14 @@ namespace McMaster.NETCore.Plugins
         public PluginLoader(PluginConfig config)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _context = CreateLoadContext(config);
+            _contextBuilder = CreateLoadContextBuilder(config);
+            _context = _contextBuilder.Build();
+#if FEATURE_UNLOAD
+            if (config.EnableHotReload)
+            {
+                StartFileWatcher();
+            }
+#endif
         }
 
         /// <summary>
@@ -151,6 +227,66 @@ namespace McMaster.NETCore.Plugins
 #endif
             }
         }
+
+#if FEATURE_UNLOAD
+
+        /// <summary>
+        /// This event is raised when the plugin has been reloaded.
+        /// If <see cref="PluginConfig.EnableHotReload" /> was set to <c>true</c>,
+        /// the plugin will be reloaded when files on disk are changed.
+        /// </summary>
+        public event PluginReloadedEventHandler? Reloaded;
+
+        /// <summary>
+        /// The unloads and reloads the plugin assemblies.
+        /// This method throws if <see cref="IsUnloadable" /> is <c>false</c>.
+        /// </summary>
+        public void Reload()
+        {
+            EnsureNotDisposed();
+
+            if (!IsUnloadable)
+            {
+                throw new InvalidOperationException("Reload cannot be used because IsUnloadable is false");
+            }
+
+            _context.Unload();
+            _context = _contextBuilder.Build();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            Reloaded?.Invoke(this, new PluginReloadedEventArgs(this));
+        }
+
+        private void StartFileWatcher()
+        {
+            /*
+            This is a very simple implementation.
+            Some improvements that could be made in the future:
+
+                * Watch all directories which contain assemblies that could be loaded
+                * Debounce changes. When files are written in-place, there can be multiple events within a few milliseconds.
+                * Support a polling file watcher.
+                * Handle delete/recreate better.
+
+            If you're interested in making improvements, feel free to send a pull request.
+            */
+
+            _fileWatcher = new FileSystemWatcher();
+            _fileWatcher.Path = Path.GetDirectoryName(_config.MainAssemblyPath);
+            _fileWatcher.Changed += OnFileChanged;
+            _fileWatcher.Filter = "*.dll";
+            _fileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            _fileWatcher.EnableRaisingEvents = true;
+        }
+
+        private void OnFileChanged(object source, FileSystemEventArgs e)
+        {
+            if (!_disposed)
+            {
+                Reload();
+            }
+        }
+#endif
 
         internal AssemblyLoadContext LoadContext => _context;
 
@@ -173,6 +309,14 @@ namespace McMaster.NETCore.Plugins
             EnsureNotDisposed();
             return _context.LoadFromAssemblyName(assemblyName);
         }
+
+        /// <summary>
+        /// Load an assembly from path.
+        /// </summary>
+        /// <param name="assemblyPath">The assembly path.</param>
+        /// <returns>The assembly.</returns>
+        public Assembly LoadAssemblyFromPath(string assemblyPath)
+            => _context.LoadFromAssemblyPath(assemblyPath);
 
         /// <summary>
         /// Load an assembly by name.
@@ -200,6 +344,13 @@ namespace McMaster.NETCore.Plugins
             _disposed = true;
 
 #if FEATURE_UNLOAD
+            if (_fileWatcher != null)
+            {
+                _fileWatcher.EnableRaisingEvents = false;
+                _fileWatcher.Changed -= OnFileChanged;
+                _fileWatcher.Dispose();
+            }
+
             if (_context.IsCollectible)
             {
                 _context.Unload();
@@ -215,7 +366,7 @@ namespace McMaster.NETCore.Plugins
             }
         }
 
-        private static AssemblyLoadContext CreateLoadContext(PluginConfig config)
+        private static AssemblyLoadContextBuilder CreateLoadContextBuilder(PluginConfig config)
         {
             var builder = new AssemblyLoadContextBuilder();
 
@@ -232,9 +383,14 @@ namespace McMaster.NETCore.Plugins
             }
 
 #if FEATURE_UNLOAD
-            if (config.IsUnloadable)
+            if (config.IsUnloadable || config.EnableHotReload)
             {
                 builder.EnableUnloading();
+            }
+
+            if (config.EnableHotReload)
+            {
+                builder.PreloadAssembliesIntoMemory();
             }
 #endif
 
@@ -268,7 +424,7 @@ namespace McMaster.NETCore.Plugins
             }
 #endif
 
-            return builder.Build();
+            return builder;
         }
     }
 }

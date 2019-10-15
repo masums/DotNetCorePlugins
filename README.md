@@ -17,7 +17,7 @@ Unlike other approaches to dynamic assembly loading, like `Assembly.LoadFrom`, t
 and `runtimeconfig.json` files to probe for dependencies, load native (unmanaged) libraries, and to
 find binaries from runtime stores or package caches. In addition, it allows for fine-grained control over
 which types should be unified between the loader and the plugin, and which can remain isolated from the main
-application.
+application. (Read [more details here](./docs/what-are-shared-types.md).)
 
 Blog post introducing this project: [.NET Core Plugins: Introducing an API for loading .dll files (and their dependencies) as 'plugins'](https://natemcmaster.com/blog/2018/07/25/netcore-plugins/)
 
@@ -41,7 +41,7 @@ PluginLoader.CreateFromAssemblyFile(
 ```
 
 * assemblyFile = the file path to the main .dll of the plugin
-* sharedTypes = a list of types which the loader should ensure are unified
+* sharedTypes = a list of types which the loader should ensure are unified. (Read [more details here](./docs/what-are-shared-types.md).)
 * isUnloadable = (.NET Core 3+ only). Allow this plugin to be unloaded from memory at some point in the future. (Requires ensuring that you have cleaned up all usages of types from the plugin before unloading actually happens.)
 
 See example projects in [samples/](./samples/) for more detailed, example usage.
@@ -51,6 +51,8 @@ See example projects in [samples/](./samples/) for more detailed, example usage.
 Using plugins requires at least two projects: (1) the 'host' app which loads plugins and (2) the plugin,
 but typically also uses a third, (3) an abstractions project which defines the interaction between the plugin
 and the host.
+
+For a fully functional sample of this, see [samples/hello-world/](./samples/hello-world/) .
 
 ### The plugin abstraction
 
@@ -138,3 +140,32 @@ public class Program
     }
 }
 ```
+
+## Support for MVC and Razor
+
+A common usage for plugins is to load class libraries that contain MVC controllers or Razor Pages. You can
+set up an ASP.NET Core to load controllers and views from a plugin using the `McMaster.NETCore.Plugins.Mvc`
+package.
+
+```
+dotnet add package McMaster.NETCore.Plugins.Mvc
+```
+
+The main API to use is `.AddPluginFromAssemblyFile()`, which can be chained onto the call to `.AddMvc()`
+or `.AddRazorPages()` in the `Startup.ConfigureServices` method.
+
+```c#
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        var pluginFile = Path.Combine(AppContext.BaseDirectory, "plugins/MyRazorPlugin/MyRazorPlugin.dll");
+        services
+            .AddMvc()
+            // The AddPluginFromAssemblyFile method comes from McMaster.NETCore.Plugins.Mvc
+            .AddPluginFromAssemblyFile(pluginFile);
+    }
+}
+```
+
+See example projects in [samples/aspnetcore-mvc/](./samples/aspnetcore-mvc/) for more detailed, example usage.

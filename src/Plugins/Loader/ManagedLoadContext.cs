@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,6 +16,7 @@ namespace McMaster.NETCore.Plugins.Loader
     /// An implementation of <see cref="AssemblyLoadContext" /> which attempts to load managed and native
     /// binaries at runtime immitating some of the behaviors of corehost.
     /// </summary>
+    [DebuggerDisplay("'{Name}' ({_mainAssemblyPath})")]
     internal class ManagedLoadContext : AssemblyLoadContext
     {
         private readonly string _basePath;
@@ -26,6 +28,7 @@ namespace McMaster.NETCore.Plugins.Loader
         private readonly IReadOnlyCollection<string> _additionalProbingPaths;
         private readonly bool _preferDefaultLoadContext;
         private readonly string[] _resourceRoots;
+        private bool _loadInMemory;
 #if FEATURE_NATIVE_RESOLVER
         private readonly AssemblyDependencyResolver _dependencyResolver;
 #endif
@@ -38,9 +41,10 @@ namespace McMaster.NETCore.Plugins.Loader
             IReadOnlyCollection<string> additionalProbingPaths,
             IReadOnlyCollection<string> resourceProbingPaths,
             bool preferDefaultLoadContext,
-            bool isCollectible)
+            bool isCollectible,
+            bool loadInMemory)
 #if FEATURE_UNLOAD
-            : base(isCollectible)
+            : base(Path.GetFileNameWithoutExtension(mainAssemblyPath), isCollectible)
 #endif
         {
             if (resourceProbingPaths == null)
@@ -52,13 +56,14 @@ namespace McMaster.NETCore.Plugins.Loader
 #if FEATURE_NATIVE_RESOLVER
             _dependencyResolver = new AssemblyDependencyResolver(mainAssemblyPath);
 #endif
-            _basePath = Path.GetDirectoryName(mainAssemblyPath);
+            _basePath = Path.GetDirectoryName(mainAssemblyPath) ?? throw new ArgumentException(nameof(mainAssemblyPath));
             _managedAssemblies = managedAssemblies ?? throw new ArgumentNullException(nameof(managedAssemblies));
             _privateAssemblies = privateAssemblies ?? throw new ArgumentNullException(nameof(privateAssemblies));
             _defaultAssemblies = defaultAssemblies ?? throw new ArgumentNullException(nameof(defaultAssemblies));
             _nativeLibraries = nativeLibraries ?? throw new ArgumentNullException(nameof(nativeLibraries));
             _additionalProbingPaths = additionalProbingPaths ?? throw new ArgumentNullException(nameof(additionalProbingPaths));
             _preferDefaultLoadContext = preferDefaultLoadContext;
+            _loadInMemory = loadInMemory;
 
             _resourceRoots = new[] { _basePath }
                 .Concat(resourceProbingPaths)
@@ -70,8 +75,14 @@ namespace McMaster.NETCore.Plugins.Loader
         /// </summary>
         /// <param name="assemblyName"></param>
         /// <returns></returns>
-        protected override Assembly Load(AssemblyName assemblyName)
+        protected override Assembly? Load(AssemblyName assemblyName)
         {
+            if (assemblyName.Name == null)
+            {
+                // not sure how to handle this case. It's technically possible.
+                return null;
+            }
+
             if ((_preferDefaultLoadContext || _defaultAssemblies.Contains(assemblyName.Name)) && !_privateAssemblies.Contains(assemblyName.Name))
             {
                 // If default context is preferred, check first for types in the default context unless the dependency has been declared as private
@@ -116,9 +127,9 @@ namespace McMaster.NETCore.Plugins.Loader
                 return null;
             }
 
-            if (_managedAssemblies.TryGetValue(assemblyName.Name, out var library))
+            if (_managedAssemblies.TryGetValue(assemblyName.Name, out var library) && library != null)
             {
-                if (SearchForLibrary(library, out var path))
+                if (SearchForLibrary(library, out var path) && path != null)
                 {
                     return LoadFromAssemblyPath(path);
                 }
@@ -135,6 +146,17 @@ namespace McMaster.NETCore.Plugins.Loader
             }
 
             return null;
+        }
+
+        private new Assembly LoadFromAssemblyPath(string path)
+        {
+            if (!_loadInMemory)
+            {
+                return base.LoadFromAssemblyPath(path);
+            }
+
+            using var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return LoadFromStream(file);
         }
 
         /// <summary>
@@ -156,7 +178,7 @@ namespace McMaster.NETCore.Plugins.Loader
             {
                 if (_nativeLibraries.TryGetValue(prefix + unmanagedDllName, out var library))
                 {
-                    if (SearchForLibrary(library, prefix, out var path))
+                    if (SearchForLibrary(library, prefix, out var path) && path != null)
                     {
                         return LoadUnmanagedDllFromResolvedPath(path);
                     }
@@ -179,7 +201,7 @@ namespace McMaster.NETCore.Plugins.Loader
 
                         if (_nativeLibraries.TryGetValue(prefix + trimmedName, out library))
                         {
-                            if (SearchForLibrary(library, prefix, out var path))
+                            if (SearchForLibrary(library, prefix, out var path) && path != null)
                             {
                                 return LoadUnmanagedDllFromResolvedPath(path);
                             }
@@ -207,7 +229,7 @@ namespace McMaster.NETCore.Plugins.Loader
             return base.LoadUnmanagedDll(unmanagedDllName);
         }
 
-        private bool SearchForLibrary(ManagedLibrary library, out string path)
+        private bool SearchForLibrary(ManagedLibrary library, out string? path)
         {
             // 1. Check for in _basePath + app local path
             var localFile = Path.Combine(_basePath, library.AppLocalPath);
@@ -243,7 +265,7 @@ namespace McMaster.NETCore.Plugins.Loader
             return false;
         }
 
-        private bool SearchForLibrary(NativeLibrary library, string prefix, out string path)
+        private bool SearchForLibrary(NativeLibrary library, string prefix, out string? path)
         {
             // 1. Search in base path
             foreach (var ext in PlatformInformation.NativeLibraryExtensions)

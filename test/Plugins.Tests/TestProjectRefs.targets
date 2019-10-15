@@ -1,21 +1,22 @@
 ﻿<Project>
-  <PropertyGroup>
-    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-  </PropertyGroup>
 
   <ItemDefinitionGroup>
     <TestProject>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
       <OutputItemType>_ResolvedTestProjectReference</OutputItemType>
+      <UndefineProperties>TargetFramework;TargetFrameworks</UndefineProperties>
     </TestProject>
     <PublishedTestProject>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
       <OutputItemType>_ResolvedPublishedTestProjectReference</OutputItemType>
+      <UndefineProperties>TargetFramework;TargetFrameworks</UndefineProperties>
     </PublishedTestProject>
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ProjectReference Include="@(TestProject)" />
+    <ProjectReference Include="@(TestProject);@(PublishedTestProject)" />
   </ItemGroup>
 
   <Target Name="GeneratePathToTestProjects"

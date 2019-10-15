@@ -1,14 +1,19 @@
-<Project>
+<Project InitialTargets="UpdateCiSettings">
 
-  <PropertyGroup>
-    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-  </PropertyGroup>
-  
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-*" PrivateAssets="all" />
   </ItemGroup>
 
-  <Import Project="..\Directory.Build.targets" />
+  <ItemGroup Condition="'$(DisablePublicApiAnalyzer)' != 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="2.9.4" PrivateAssets="All" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+  <Target Name="UpdateCiSettings" Condition="'$(CI)' == 'true'">
+    <Message Importance="High" Text="##vso[build.updatebuildnumber]$(PackageVersion)" />
+  </Target>
+
   <Import Project="CodeSign.targets" />
 
 </Project>

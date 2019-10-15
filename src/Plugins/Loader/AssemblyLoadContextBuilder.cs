@@ -23,11 +23,12 @@ namespace McMaster.NETCore.Plugins.Loader
         private readonly Dictionary<string, NativeLibrary> _nativeLibraries = new Dictionary<string, NativeLibrary>(StringComparer.Ordinal);
         private readonly HashSet<string> _privateAssemblies = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _defaultAssemblies = new HashSet<string>(StringComparer.Ordinal);
-        private string _mainAssemblyPath;
+        private string? _mainAssemblyPath;
         private bool _preferDefaultLoadContext;
 
 #if FEATURE_UNLOAD
         private bool _isCollectible;
+        private bool _loadInMemory;
 #endif
 
         /// <summary>
@@ -45,6 +46,11 @@ namespace McMaster.NETCore.Plugins.Loader
                 }
             }
 
+            if (_mainAssemblyPath == null)
+            {
+                throw new InvalidOperationException($"Missing required property. You must call '{nameof(SetMainAssemblyPath)}' to configure the default assembly.");
+            }
+
             return new ManagedLoadContext(
                 _mainAssemblyPath,
                 _managedLibraries,
@@ -55,9 +61,11 @@ namespace McMaster.NETCore.Plugins.Loader
                 resourceProbingPaths,
                 _preferDefaultLoadContext,
 #if FEATURE_UNLOAD
-                _isCollectible);
+                _isCollectible,
+                _loadInMemory);
 #else
-                isCollectible: false);
+                isCollectible: false,
+                loadInMemory: false);
 #endif
         }
 
@@ -104,7 +112,11 @@ namespace McMaster.NETCore.Plugins.Loader
         /// <returns>The builder.</returns>
         public AssemblyLoadContextBuilder PreferLoadContextAssembly(AssemblyName assemblyName)
         {
-            _privateAssemblies.Add(assemblyName.Name);
+            if (assemblyName.Name != null)
+            {
+                _privateAssemblies.Add(assemblyName.Name);
+            }
+
             return this;
         }
 
@@ -118,7 +130,23 @@ namespace McMaster.NETCore.Plugins.Loader
         /// <returns>The builder.</returns>
         public AssemblyLoadContextBuilder PreferDefaultLoadContextAssembly(AssemblyName assemblyName)
         {
+            if (assemblyName.Name == null || _defaultAssemblies.Contains(assemblyName.Name))
+            {
+                // base cases
+                return this;
+            }
+
             _defaultAssemblies.Add(assemblyName.Name);
+
+            // Recursively load and find all dependencies of default assemblies.
+            // This sacrifices some performance for determinism in how transitive
+            // dependencies will be shared between host and plugin.
+            var assembly = AssemblyLoadContext.Default.LoadFromAssemblyName(assemblyName);
+            foreach (var reference in assembly.GetReferencedAssemblies())
+            {
+                PreferDefaultLoadContextAssembly(reference);
+            }
+
             return this;
         }
 
@@ -150,7 +178,11 @@ namespace McMaster.NETCore.Plugins.Loader
         {
             ValidateRelativePath(library.AdditionalProbingPath);
 
-            _managedLibraries.Add(library.Name.Name, library);
+            if (library.Name.Name != null)
+            {
+                _managedLibraries.Add(library.Name.Name, library);
+            }
+
             return this;
         }
 
@@ -218,6 +250,18 @@ namespace McMaster.NETCore.Plugins.Loader
         public AssemblyLoadContextBuilder EnableUnloading()
         {
             _isCollectible = true;
+            return this;
+        }
+
+        /// <summary>
+        /// Read .dll files into memory to avoid locking the files.
+        /// This is not as efficient, so is not enabled by default, but is required for scenarios
+        /// like hot reloading.
+        /// </summary>
+        /// <returns>The builder</returns>
+        public AssemblyLoadContextBuilder PreloadAssembliesIntoMemory()
+        {
+            _loadInMemory = true; // required to prevent dotnet from locking loaded files
             return this;
         }
 #endif

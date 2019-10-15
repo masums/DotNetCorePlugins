@@ -5,8 +5,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using System.Text.Json;
 
 namespace McMaster.NETCore.Plugins.Loader
 {
@@ -16,6 +15,10 @@ namespace McMaster.NETCore.Plugins.Loader
     public static class RuntimeConfigExtensions
     {
         private const string JsonExt = ".json";
+        private static readonly JsonSerializerOptions s_serializerOptions = new JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         /// <summary>
         /// Adds additional probing paths to a managed load context using settings found in the runtimeconfig.json
@@ -30,7 +33,7 @@ namespace McMaster.NETCore.Plugins.Loader
             this AssemblyLoadContextBuilder builder,
             string runtimeConfigPath,
             bool includeDevConfig,
-            out Exception error)
+            out Exception? error)
         {
             error = null;
             try
@@ -41,7 +44,7 @@ namespace McMaster.NETCore.Plugins.Loader
                     return builder;
                 }
 
-                RuntimeConfig devConfig = null;
+                RuntimeConfig? devConfig = null;
                 if (includeDevConfig)
                 {
                     var configDevPath = runtimeConfigPath.Substring(0, runtimeConfigPath.Length - JsonExt.Length) + ".dev.json";
@@ -66,7 +69,10 @@ namespace McMaster.NETCore.Plugins.Loader
                     if (string.Equals(Path.GetFileNameWithoutExtension(dotnet), "dotnet", StringComparison.OrdinalIgnoreCase))
                     {
                         var dotnetHome = Path.GetDirectoryName(dotnet);
-                        builder.AddProbingPath(Path.Combine(dotnetHome, "store", RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(), tfm));
+                        if (dotnetHome != null)
+                        {
+                            builder.AddProbingPath(Path.Combine(dotnetHome, "store", RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(), tfm));
+                        }
                     }
                 }
             }
@@ -77,7 +83,7 @@ namespace McMaster.NETCore.Plugins.Loader
             return builder;
         }
 
-        private static void AddProbingPaths(AssemblyLoadContextBuilder builder, RuntimeOptions options, string tfm)
+        private static void AddProbingPaths(AssemblyLoadContextBuilder builder, RuntimeOptions options, string? tfm)
         {
             if (options.AdditionalProbingPaths == null)
             {
@@ -107,22 +113,12 @@ namespace McMaster.NETCore.Plugins.Loader
             }
         }
 
-        private static RuntimeConfig TryReadConfig(string path)
+        private static RuntimeConfig? TryReadConfig(string path)
         {
             try
             {
-                using (var file = File.OpenText(path))
-                using (var json = new JsonTextReader(file))
-                {
-                    var serializer = new JsonSerializer
-                    {
-                        ContractResolver = new DefaultContractResolver
-                        {
-                            NamingStrategy = new CamelCaseNamingStrategy(),
-                        },
-                    };
-                    return serializer.Deserialize<RuntimeConfig>(json);
-                }
+                var file = File.ReadAllBytes(path);
+                return JsonSerializer.Deserialize<RuntimeConfig>(file, s_serializerOptions);
             }
             catch
             {
