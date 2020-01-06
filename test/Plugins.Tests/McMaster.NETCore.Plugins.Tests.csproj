@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;netcoreapp2.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="McMaster.Extensions.Xunit" Version="0.1.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Plugins\McMaster.NETCore.Plugins.csproj" />
+    <ProjectReference Include="..\TestProjects\WithOwnPluginsContract\WithOwnPluginsContract.csproj" />
     <ProjectReference Include="..\TestProjects\ReferencedLibv1\ReferencedLibv1.csproj" />
     <ProjectReference Include="..\TestProjects\SharedAbstraction.v2\SharedAbstraction.v2.csproj" />
     <TestProject Include="..\TestProjects\ReferencedLibv2\ReferencedLibv2.csproj" />
@@ -29,6 +30,7 @@
     <TestProject Include="..\TestProjects\SqlClientApp\SqlClientApp.csproj" />
     <TestProject Include="..\TestProjects\TransitivePlugin\TransitivePlugin.csproj" />
     <PublishedTestProject Include="..\TestProjects\PowerShellPlugin\PowerShellPlugin.csproj" />
+    <MultitargetTestProject Include="..\TestProjects\WithOwnPlugins\WithOwnPlugins.csproj" />
   </ItemGroup>
 
   <Import Project="TestProjectRefs.targets" />
