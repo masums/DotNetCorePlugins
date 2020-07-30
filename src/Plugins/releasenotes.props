@@ -1,5 +1,18 @@
 ﻿<Project>
   <PropertyGroup>
+    <PackageReleaseNotes Condition="'$(VersionPrefix)' == '1.3.0'">
+Changes:
+* @bergi9 - add 'LoadInMemory' option so you can manually trigger reloads (alternative to HotReload) (PR #133)
+    </PackageReleaseNotes>
+    <PackageReleaseNotes Condition="'$(VersionPrefix)' == '1.2.0'">
+Changes:
+* @thoemmi - Debounce file system events when using hot reload and add API to control the debounce delay (default = 200 ms) (PR #129)
+    </PackageReleaseNotes>
+    <PackageReleaseNotes Condition="'$(VersionPrefix)' == '1.1.0'">
+Changes:
+* Add an API to enable shadow copying native library dependencies (PR #119)
+* Fix issue with native libraries being locked on disk during hot reload (Issue #118)
+    </PackageReleaseNotes>
     <PackageReleaseNotes Condition="'$(VersionPrefix)' == '1.0.0'">
 Changes:
 * Add an API to enable contextual reflection in .NET Core 3+ (see https://github.com/natemcmaster/DotNetCorePlugins/blob/v1.0.0/README.md#Reflection for details)
